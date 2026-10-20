@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Gym Planner",
+    "slug": "gym-planner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "gymplanner",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.propslane.gymplanner",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserNotificationsUsageDescription": "Used only for workout reminders you turn on."
+      },
+      "requireFullScreen": true
+    },
+    "android": {
+      "package": "com.gymplanner.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": []
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-sharing",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
+          "imageWidth": 240
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1C7A8B"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "60b2620e-6f47-4544-810a-c6ae539dd49c"
+      }
+    },
+    "owner": "vinodchauhan72"
+  }
+}
