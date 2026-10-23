@@ -65,20 +65,24 @@ export interface BackupPreview {
   dateRange: { from: string; to: string } | null;
 }
 
-export async function buildBackup(db: Db, appVersion: string, now: string = new Date().toISOString()): Promise<BackupEnvelope> {
-  const [ex, rt, wt, te, rs, ws, se, es, rh, up, am] = await Promise.all([
-    db.select().from(exercises),
-    db.select().from(routines),
-    db.select().from(workoutTemplates),
-    db.select().from(templateExercises),
-    db.select().from(routineSchedule),
-    db.select().from(workoutSessions),
-    db.select().from(sessionExercises),
-    db.select().from(exerciseSets),
-    db.select().from(recommendationHistory),
-    db.select().from(userPreferences),
-    db.select().from(appMeta),
-  ]);
+export async function buildBackup(
+  db: Db,
+  appVersion: string,
+  now: string = new Date().toISOString(),
+): Promise<BackupEnvelope> {
+  // Sequential on purpose: the on-device SQLite driver shares one connection, so this is just as fast
+  // and avoids any chance of interleaved statements stalling.
+  const ex = await db.select().from(exercises);
+  const rt = await db.select().from(routines);
+  const wt = await db.select().from(workoutTemplates);
+  const te = await db.select().from(templateExercises);
+  const rs = await db.select().from(routineSchedule);
+  const ws = await db.select().from(workoutSessions);
+  const se = await db.select().from(sessionExercises);
+  const es = await db.select().from(exerciseSets);
+  const rh = await db.select().from(recommendationHistory);
+  const up = await db.select().from(userPreferences);
+  const am = await db.select().from(appMeta);
   return {
     format: BACKUP_FORMAT,
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -104,7 +108,8 @@ export function serializeBackup(b: BackupEnvelope): string {
   return JSON.stringify(b);
 }
 
-export type ParseResult = { ok: true; backup: BackupEnvelope; preview: BackupPreview } | { ok: false; error: string };
+export type ParseResult =
+  { ok: true; backup: BackupEnvelope; preview: BackupPreview } | { ok: false; error: string };
 
 /** Upgraders transform an older backup's tables to the next schema version. Keyed by "from" version. */
 export const upgraders: Record<number, (b: BackupEnvelope) => BackupEnvelope> = {};
@@ -120,7 +125,8 @@ export function parseBackup(text: string): ParseResult {
     return { ok: false, error: 'This file is not a Gym Planner backup.' };
   }
   const version = Number((json as { schemaVersion?: unknown }).schemaVersion);
-  if (!Number.isInteger(version) || version < 1) return { ok: false, error: 'The backup has an invalid data version.' };
+  if (!Number.isInteger(version) || version < 1)
+    return { ok: false, error: 'The backup has an invalid data version.' };
   if (version > CURRENT_SCHEMA_VERSION) {
     return {
       ok: false,
@@ -130,7 +136,10 @@ export function parseBackup(text: string): ParseResult {
   const parsed = BackupEnvelopeSchema.safeParse(json);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return { ok: false, error: `The backup contains invalid data${issue ? ` (${issue.path.join('.')}: ${issue.message})` : ''}.` };
+    return {
+      ok: false,
+      error: `The backup contains invalid data${issue ? ` (${issue.path.join('.')}: ${issue.message})` : ''}.`,
+    };
   }
   let backup = parsed.data;
   for (let v = backup.schemaVersion; v < CURRENT_SCHEMA_VERSION; v += 1) {
@@ -145,7 +154,9 @@ export function previewOf(b: BackupEnvelope): BackupPreview {
   const sessions = b.tables.workout_sessions;
   const completed = sessions.filter((s) => s.status === 'completed');
   const dates = sessions.map((s) => s.localDate).sort();
-  const counts = Object.fromEntries(Object.entries(b.tables).map(([k, v]) => [k, v.length])) as BackupPreview['counts'];
+  const counts = Object.fromEntries(
+    Object.entries(b.tables).map(([k, v]) => [k, v.length]),
+  ) as BackupPreview['counts'];
   return {
     exportedAt: b.exportedAt,
     appVersion: b.appVersion,

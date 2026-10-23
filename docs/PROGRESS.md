@@ -30,12 +30,12 @@ _Last updated: 2026-10-18_
 - Progress: totals, streaks, workouts/week and volume/week bar charts, sets by muscle group, per-exercise trend (top weight / est. 1RM / volume) and PRs on react-native-svg charts.
 
 ### Phase 5 — Reliability
-- Backup: versioned JSON envelope validated with Zod (drizzle-zod row schemas), preview, confirmation, transactional restore, newer-version rejection, upgrader hook for older versions, CSV export, optional AES-256-GCM + scrypt passphrase encryption (@noble, pure JS).
+- Backup: versioned JSON envelope validated with Zod (drizzle-zod row schemas), preview, confirmation, transactional restore, newer-version rejection, upgrader hook for older versions, optional AES-256-GCM + scrypt passphrase encryption (@noble, pure JS).
 - Local notifications: weekly reminders on training days, optional rest-day reminder, rest-timer alert; permission requested only when enabled.
 - Settings: units, training days, default rest, theme, reminders, backup, privacy page, typed-confirmation delete-all.
 
 ## Tests performed
-- `npm test` — 11 suites, 91 tests passing. Node: engines (58), migrations, seed, DB integrity (FK restrict/cascade, 2,000-session performance), services (start/finish/resume/substitute/history integrity), store autosave + restart, backup round-trip/transactional failure/CSV/encryption. UI (jest-expo + RNTL): SetRow (one-tap completion, steppers, timed), Onboarding flow.
+- `npm test` — 11 suites, 91 tests passing. Node: engines (58), migrations, seed, DB integrity (FK restrict/cascade, 2,000-session performance), services (start/finish/resume/substitute/history integrity), store autosave + restart, backup round-trip/transactional failure/encryption. UI (jest-expo + RNTL): SetRow (one-tap completion, steppers, timed), Onboarding flow.
 - `npm run typecheck` — clean.
 - `npm run lint` — 0 errors.
 - `npx expo export --platform android` — succeeds (7.1 MB Hermes bundle), confirming Metro resolves every import including the inlined SQL migrations.
@@ -59,3 +59,9 @@ _Last updated: 2026-10-18_
 - Device validation on Android and iOS (see above) and screenshots.
 - EAS/production signing configuration.
 - Optional: haptics on set completion, drag-to-reorder, per-exercise rest overrides during a workout, RPE/RIR entry UI (columns exist in the schema).
+
+## Build note: @emnapi dev dependencies
+`@emnapi/core` and `@emnapi/runtime` are listed as devDependencies on purpose. They are peer dependencies of an
+optional WebAssembly resolver that npm skips on Windows, so a lockfile generated here never records them and
+`npm ci` on the macOS EAS builders fails with "Missing: @emnapi/core from lock file". Pinning them keeps the
+lockfile complete on every platform. Do not remove them.

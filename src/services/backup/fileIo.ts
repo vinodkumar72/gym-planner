@@ -4,7 +4,14 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Constants from 'expo-constants';
 import { getDb } from '@/db/client';
-import { backupToCsv, buildBackup, parseBackup, restoreBackup, serializeBackup, type BackupEnvelope, type BackupPreview } from './core';
+import {
+  buildBackup,
+  parseBackup,
+  restoreBackup,
+  serializeBackup,
+  type BackupEnvelope,
+  type BackupPreview,
+} from './core';
 import { decryptEnvelope, encryptText, isEncryptedEnvelope } from './crypto';
 
 function stamp(): string {
@@ -15,31 +22,51 @@ function appVersion(): string {
   return Constants.expoConfig?.version ?? '1.0.0';
 }
 
-async function shareText(name: string, content: string, mimeType: string): Promise<void> {
-  const file = new File(Paths.cache, name);
-  if (file.exists) file.delete();
-  file.create();
-  await file.write(content);
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: name, UTI: mimeType === 'text/csv' ? 'public.comma-separated-values-text' : 'public.json' });
-  } else {
-    throw new Error(`Sharing is not available on this device. File saved at ${file.uri}`);
-  }
+export type ExportStage = 'reading' | 'encrypting' | 'writing' | 'sharing';
+
+export interface PreparedBackup {
+  uri: string;
+  fileName: string;
+  bytes: number;
+  encrypted: boolean;
 }
 
-/** Exports all data. With a passphrase the file is AES-256-GCM encrypted; otherwise it is plain JSON. */
-export async function exportBackupFile(passphrase?: string): Promise<{ encrypted: boolean }> {
+/**
+ * Step 1 of an export: read the database and write the backup file into the app cache.
+ * Pure file work, no UI, so it can run while any sheet is still open.
+ */
+export async function prepareBackupFile(
+  passphrase: string | undefined,
+  onStage: (s: ExportStage) => void = () => undefined,
+): Promise<PreparedBackup> {
+  onStage('reading');
   const backup = await buildBackup(getDb(), appVersion());
   const json = serializeBackup(backup);
   const encrypted = !!passphrase;
-  const content = encrypted ? JSON.stringify(encryptText(json, passphrase, (n) => Crypto.getRandomBytes(n))) : json;
-  await shareText(`gym-planner-backup-${stamp()}${encrypted ? '.encrypted' : ''}.json`, content, 'application/json');
-  return { encrypted };
+  let content = json;
+  if (passphrase) {
+    onStage('encrypting');
+    content = JSON.stringify(encryptText(json, passphrase, (n) => Crypto.getRandomBytes(n)));
+  }
+  onStage('writing');
+  const fileName = `gym-planner-backup-${stamp()}${encrypted ? '.encrypted' : ''}.json`;
+  const file = new File(Paths.cache, fileName);
+  file.create({ overwrite: true, intermediates: true });
+  file.write(content);
+  if (!file.exists) throw new Error('The backup file could not be written to the app cache.');
+  return { uri: file.uri, fileName, bytes: content.length, encrypted };
 }
 
-export async function exportCsvFile(): Promise<void> {
-  const backup = await buildBackup(getDb(), appVersion());
-  await shareText(`gym-planner-workouts-${stamp()}.csv`, backupToCsv(backup), 'text/csv');
+/** Step 2 of an export: hand the file to the system share sheet. Resolves when the sheet closes. */
+export async function shareBackupFile(prepared: PreparedBackup): Promise<void> {
+  if (!(await Sharing.isAvailableAsync())) {
+    throw new Error(`Sharing is not available on this device. The file is at ${prepared.uri}`);
+  }
+  await Sharing.shareAsync(prepared.uri, {
+    mimeType: 'application/json',
+    dialogTitle: prepared.fileName,
+    UTI: 'public.json',
+  });
 }
 
 export type PickResult =
@@ -50,7 +77,11 @@ export type PickResult =
 
 /** Opens the system file picker and validates the chosen backup. Does not modify any data. */
 export async function pickBackupFile(): Promise<PickResult> {
-  const res = await DocumentPicker.getDocumentAsync({ type: ['application/json', 'text/plain', '*/*'], copyToCacheDirectory: true, multiple: false });
+  const res = await DocumentPicker.getDocumentAsync({
+    type: ['application/json', 'text/plain', '*/*'],
+    copyToCacheDirectory: true,
+    multiple: false,
+  });
   if (res.canceled) return { kind: 'canceled' };
   const asset = res.assets[0];
   if (!asset) return { kind: 'canceled' };

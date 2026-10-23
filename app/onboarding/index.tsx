@@ -5,7 +5,13 @@ import { Button, Card, Chip, ChipRow, Screen, Text } from '@/components/common';
 import { getDb } from '@/db/client';
 import { activateRoutine } from '@/db/repositories/routineRepo';
 import { SEED_ROUTINES } from '@/db/seed/routines';
-import { EQUIPMENT, type Equipment, type ExperienceLevel, type Goal, type WeightUnit } from '@/domain/models/types';
+import {
+  EQUIPMENT,
+  type Equipment,
+  type ExperienceLevel,
+  type Goal,
+  type WeightUnit,
+} from '@/domain/models/types';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/theme/ThemeProvider';
 import { nowIso } from '@/utils/ids';
@@ -45,7 +51,13 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<Goal>('muscle');
   const [level, setLevel] = useState<ExperienceLevel>('beginner');
   const [days, setDays] = useState(3);
-  const [equipment, setEquipment] = useState<Equipment[]>(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight']);
+  const [equipment, setEquipment] = useState<Equipment[]>([
+    'barbell',
+    'dumbbell',
+    'machine',
+    'cable',
+    'bodyweight',
+  ]);
   const [unit, setUnit] = useState<WeightUnit>('lb');
   const [routineId, setRoutineId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -91,14 +103,39 @@ export default function Onboarding() {
 
   const title = STEPS[step] ?? '';
   return (
-    <Screen title={step === 0 ? 'Welcome' : title} subtitle={`Step ${step + 1} of ${STEPS.length}`} testID="onboarding" back={false}>
+    <Screen
+      title={step === 0 ? 'Welcome' : title}
+      subtitle={`Step ${step + 1} of ${STEPS.length}`}
+      testID="onboarding"
+      back={false}
+      footer={
+        <View style={[styles.footer, { gap: spacing.sm }]}>
+          {step > 0 ? (
+            <Button title="Back" variant="secondary" onPress={() => setStep((s) => s - 1)} />
+          ) : (
+            <View />
+          )}
+          {step < STEPS.length - 1 ? (
+            <Button title="Continue" onPress={() => setStep((s) => s + 1)} testID="onboarding-next" />
+          ) : (
+            <Button title="Start training" onPress={finish} loading={saving} testID="onboarding-finish" />
+          )}
+        </View>
+      }
+    >
       {step === 0 && (
         <>
           <Text tone="muted" style={{ marginBottom: spacing.lg }}>
             No account, no cloud. Everything stays on this phone. What&apos;s your main goal?
           </Text>
           {GOALS.map((g) => (
-            <Card key={g.value} onPress={() => setGoal(g.value)} tone={goal === g.value ? 'primary' : 'default'} style={{ marginBottom: spacing.sm }} testID={`goal-${g.value}`}>
+            <Card
+              key={g.value}
+              onPress={() => setGoal(g.value)}
+              tone={goal === g.value ? 'primary' : 'default'}
+              style={{ marginBottom: spacing.sm }}
+              testID={`goal-${g.value}`}
+            >
               <Text weight="semibold">{g.label}</Text>
               <Text variant="caption" tone="muted">
                 {g.hint}
@@ -109,7 +146,13 @@ export default function Onboarding() {
       )}
       {step === 1 &&
         LEVELS.map((l) => (
-          <Card key={l.value} onPress={() => setLevel(l.value)} tone={level === l.value ? 'primary' : 'default'} style={{ marginBottom: spacing.sm }} testID={`level-${l.value}`}>
+          <Card
+            key={l.value}
+            onPress={() => setLevel(l.value)}
+            tone={level === l.value ? 'primary' : 'default'}
+            style={{ marginBottom: spacing.sm }}
+            testID={`level-${l.value}`}
+          >
             <Text weight="semibold">{l.label}</Text>
             <Text variant="caption" tone="muted">
               {l.hint}
@@ -123,7 +166,13 @@ export default function Onboarding() {
           </Text>
           <ChipRow>
             {[2, 3, 4, 5, 6].map((d) => (
-              <Chip key={d} label={`${d} days`} selected={days === d} onPress={() => setDays(d)} testID={`days-${d}`} />
+              <Chip
+                key={d}
+                label={`${d} days`}
+                selected={days === d}
+                onPress={() => setDays(d)}
+                testID={`days-${d}`}
+              />
             ))}
           </ChipRow>
         </>
@@ -135,7 +184,12 @@ export default function Onboarding() {
           </Text>
           <ChipRow>
             {EQUIPMENT.map((e) => (
-              <Chip key={e} label={EQUIPMENT_LABELS[e]} selected={equipment.includes(e)} onPress={() => toggleEquipment(e)} />
+              <Chip
+                key={e}
+                label={EQUIPMENT_LABELS[e]}
+                selected={equipment.includes(e)}
+                onPress={() => toggleEquipment(e)}
+              />
             ))}
           </ChipRow>
         </>
@@ -146,18 +200,35 @@ export default function Onboarding() {
             Which unit do you lift in?
           </Text>
           <ChipRow>
-            <Chip label="Pounds (lb)" selected={unit === 'lb'} onPress={() => setUnit('lb')} testID="unit-lb" />
-            <Chip label="Kilograms (kg)" selected={unit === 'kg'} onPress={() => setUnit('kg')} testID="unit-kg" />
+            <Chip
+              label="Pounds (lb)"
+              selected={unit === 'lb'}
+              onPress={() => setUnit('lb')}
+              testID="unit-lb"
+            />
+            <Chip
+              label="Kilograms (kg)"
+              selected={unit === 'kg'}
+              onPress={() => setUnit('kg')}
+              testID="unit-kg"
+            />
           </ChipRow>
         </>
       )}
       {step === 5 && (
         <>
           <Text tone="muted" style={{ marginBottom: spacing.lg }}>
-            Pick a starting routine. The first one is our recommendation based on your answers. You can customise or build your own later.
+            Pick a starting routine. The first one is our recommendation based on your answers. You can
+            customise or build your own later.
           </Text>
           {recommended.map((r, i) => (
-            <Card key={r.id} onPress={() => setRoutineId(r.id)} tone={chosen === r.id ? 'primary' : 'default'} style={{ marginBottom: spacing.sm }} testID={`routine-${r.id}`}>
+            <Card
+              key={r.id}
+              onPress={() => setRoutineId(r.id)}
+              tone={chosen === r.id ? 'primary' : 'default'}
+              style={{ marginBottom: spacing.sm }}
+              testID={`routine-${r.id}`}
+            >
               <View style={styles.rowBetween}>
                 <Text weight="semibold">{r.name}</Text>
                 {i === 0 ? <Chip label="Recommended" small tone="success" /> : null}
@@ -172,15 +243,6 @@ export default function Onboarding() {
           ))}
         </>
       )}
-
-      <View style={[styles.footer, { marginTop: spacing.xl, gap: spacing.sm }]}>
-        {step > 0 ? <Button title="Back" variant="secondary" onPress={() => setStep((s) => s - 1)} /> : <View />}
-        {step < STEPS.length - 1 ? (
-          <Button title="Continue" onPress={() => setStep((s) => s + 1)} testID="onboarding-next" />
-        ) : (
-          <Button title="Start training" onPress={finish} loading={saving} testID="onboarding-finish" />
-        )}
-      </View>
     </Screen>
   );
 }

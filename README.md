@@ -8,7 +8,7 @@ Offline-first workout tracker for iOS and Android. **Open the app. Know what to 
 * Rules-based double-progression suggestions with a plain-language reason for every recommendation.
 * One-tap set logging, prefilled from last time, autosaved on every change, resumable after a kill.
 * History calendar, progress charts, personal records, consistency streaks.
-* Versioned JSON backup/restore (optionally passphrase-encrypted), CSV export, local reminders.
+* Versioned JSON backup/restore (optionally passphrase-encrypted), local reminders.
 
 ## Stack
 
